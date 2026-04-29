@@ -60,9 +60,9 @@ test_application:
     - docker-compose -f docker-compose.yml up -d
     - |
       echo "Waiting for app to be healthy..."
-      for i in $(seq 1 30); do
+      for i in $(seq 1 10); do
         curl -sf http://localhost:3000/health && break
-        echo "Attempt $i/30, retrying in 5s..."
+        echo "Attempt $i/10, retrying in 5s..."
         sleep 5
       done
     - docker-compose exec -T app npm test

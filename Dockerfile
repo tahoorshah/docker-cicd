@@ -2,7 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl && \
+    apk upgrade --no-cache
 
 COPY package*.json ./
 
