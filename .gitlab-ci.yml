@@ -59,7 +59,7 @@ test_application:
     - |
       echo "Waiting for app to be healthy..."
       for i in $(seq 1 30); do
-        docker-compose exec -T app curl -sf http://localhost:3000/health && break
+        curl -sf http://localhost:3000/health && break
         echo "Attempt $i/30, retrying in 5s..."
         sleep 5
       done
@@ -74,9 +74,14 @@ test_application:
 # ─────────────────────────────────────────
 security_comprehensive_scan:
   stage: security
-  image: aquasec/trivy:latest
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  variables:
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache"
   before_script:
-    - echo "Trivy image — no login needed for scanning"
+    - trivy --version
   script:
     - echo "Scanning application image for vulnerabilities..."
 
@@ -129,7 +134,7 @@ deploy_staging:
     - |
       echo "Waiting for app to be healthy..."
       for i in $(seq 1 30); do
-        docker-compose exec -T app curl -sf http://localhost:3000/health && break
+        curl -sf http://localhost:3000/health && break
         echo "Attempt $i/30, retrying in 5s..."
         sleep 5
       done
@@ -167,7 +172,7 @@ deploy_production:
     - |
       echo "Waiting for app to be healthy..."
       for i in $(seq 1 30); do
-        docker-compose exec -T app curl -sf http://localhost:3000/health && break
+        curl -sf http://localhost:3000/health && break
         echo "Attempt $i/30, retrying in 5s..."
         sleep 5
       done
