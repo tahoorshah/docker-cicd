@@ -1,0 +1,50 @@
+services:
+  app:
+    environment:
+      - NODE_ENV=staging
+      - APP_VERSION=${APP_VERSION}
+      - MONGO_USERNAME=${STAGING_MONGO_USERNAME}
+      - MONGO_PASSWORD=${STAGING_MONGO_PASSWORD}
+      - MONGO_HOST=mongo
+      - MONGO_DB=stagingdb
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${STAGING_REDIS_PASSWORD}
+    ports:
+      - "3001:3000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.5'
+
+  mongo:
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${STAGING_MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${STAGING_MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=stagingdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  redis:
+    command: redis-server --requirepass ${STAGING_REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${STAGING_REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128m
