@@ -1,0 +1,58 @@
+stages:
+  - build
+  - test
+  - security
+  - deploy
+
+# Set up authentication once for all jobs that need it
+default:
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+
+services:
+  - docker:24-dind
+
+build_image:
+  stage: build
+  image: docker:24
+  script:
+    - docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
+    - docker push $IMAGE_TAG
+    - docker push $IMAGE_LATEST
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
+
+test_application:
+  stage: test
+  image: docker:24
+  script:
+    - docker pull $IMAGE_TAG
+    - docker run --rm $IMAGE_TAG npm test
+    # Health check logic...
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
+
+security_scan:
+  stage: security
+  image: docker:24
+  script:
+    - docker pull $IMAGE_TAG
+    - echo "Running security scan on $IMAGE_TAG..."
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+deploy_staging:
+  stage: deploy
+  image: docker:24
+  script:
+    - echo "Deploying $IMAGE_TAG to staging..."
+  environment:
+    name: staging
+    url: http://staging.example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
